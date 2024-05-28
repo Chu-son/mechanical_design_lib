@@ -1,0 +1,16 @@
+services:
+  mech_design_lib:
+    image: mechanical_design_library
+    build:
+      context: .
+      dockerfile: "docker/Dockerfile"
+
+    tty: true
+
+    # env_file:
+    #   - .env
+
+    volumes:
+      - ./:/app/
+
+    command: "sleep infinity"
