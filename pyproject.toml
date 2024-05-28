@@ -1,0 +1,7 @@
+[project]
+name = "mechanical_design_lib"
+version = "0.0.1"
+dependencies = ["jupyter", "numpy", "sympy"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
