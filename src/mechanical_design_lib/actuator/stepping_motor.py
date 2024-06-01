@@ -22,3 +22,15 @@ class SteppingMotor:
     @property
     def step_angle(self) -> float:
         return self._step_angle
+
+    def get_pps(self, rpm: float) -> float:
+        return (rpm / 60) * (360 / self.step_angle)
+
+    def get_rpm(self, pps: float) -> float:
+        return (pps / (360 / self.step_angle)) * 60
+
+
+if __name__ == '__main__':
+    motor = SteppingMotor(phase=2, microstep_resolution=1)
+    print(motor.get_pps(60))
+    print(motor.get_rpm(200))
