@@ -4,26 +4,26 @@ import numpy as np
 from mechanical_design_lib.utils.unit import UnitConverter
 
 
-class LinearActuator:
+class BaseActuator:
     def __init__(self,
-                 stroke: int,  # mm
-                 max_velocity: int,  # mm/s
-                 max_acceleration: float,  # mm/s^2
-                 max_deceleration: float,  # mm/s^2
+                 stroke: int,  # unit depends on subclass
+                 max_velocity: int,  # unit depends on subclass
+                 max_acceleration: float,  # unit depends on subclass
+                 max_deceleration: float,  # unit depends on subclass
                  ):
         self._stroke = stroke
         self._max_velocity = max_velocity
         self._max_acceleration = max_acceleration
         self._max_deceleration = max_deceleration
 
-        self._position: int = 0  # mm
+        self._position: int = 0  # unit depends on subclass
 
     def move(self,
-             target_position: int,  # mm
-             velocity: int | None = None,  # mm/s
-             acceleration: float | None = None,  # mm/s^2
-             deceleration: float | None = None,  # mm/s^2
-             only_simulation: bool = False,
+             target_position: int,  # unit depends on subclass
+             velocity: int | None = None,  # unit depends on subclass
+             acceleration: float | None = None,  # unit depends on subclass
+             deceleration: float | None = None,  # unit depends on subclass
+             simulation_only: bool = False,
              ) -> np.ndarray:
 
         if target_position > self._stroke:
@@ -31,7 +31,7 @@ class LinearActuator:
         if target_position < 0:
             raise ValueError("Target position is out of stroke range.")
 
-        if only_simulation:
+        if simulation_only:
             self._position = target_position
 
         velocity = velocity or self._max_velocity
@@ -72,6 +72,26 @@ class LinearActuator:
                 v_array[i] = velocity - deceleration * (t - t_accel - t_const)
 
         return np.array([t_array, v_array])
+
+
+class LinearActuator(BaseActuator):
+    def __init__(self,
+                 stroke: int,  # mm
+                 max_velocity: int,  # mm/s
+                 max_acceleration: float,  # mm/s^2
+                 max_deceleration: float,  # mm/s^2
+                 ):
+        super().__init__(stroke, max_velocity, max_acceleration, max_deceleration)
+
+
+class RotaryActuator(BaseActuator):
+    def __init__(self,
+                 stroke: float,  # degree
+                 max_velocity: float,  # degree/s
+                 max_acceleration: float,  # degree/s^2
+                 max_deceleration: float,  # degree/s^2
+                 ):
+        super().__init__(stroke, max_velocity, max_acceleration, max_deceleration)
 
 
 class LinearActuatorFactory:
@@ -148,6 +168,56 @@ class LinearActuatorFactory:
         return LinearActuator(stroke, max_velocity, max_acceleration, max_deceleration)
 
 
+class ScrewActuator(LinearActuator):
+    def __init__(self,
+                 stroke: int,  # mm
+                 max_velocity: int,  # mm/s
+                 max_acceleration: float,  # mm/s^2
+                 max_deceleration: float,  # mm/s^2
+                 pitch: float,  # mm/rev
+                 ):
+        super().__init__(stroke, max_velocity, max_acceleration, max_deceleration)
+        self._pitch = pitch
+
+    def move(self,
+             target_position: int,  # mm
+             velocity: int | None = None,  # mm/s
+             acceleration: float | None = None,  # mm/s^2
+             deceleration: float | None = None,  # mm/s^2
+             simulation_only: bool = False,
+             ) -> np.ndarray:
+        return super().move(target_position, velocity, acceleration, deceleration, simulation_only)
+
+    def get_revolution(self, distance: int) -> float:
+        return distance / self._pitch
+
+
+class RotaryActuatorWithPulley(RotaryActuator):
+    def __init__(self,
+                 stroke: float,  # degree
+                 max_velocity: float,  # degree/s
+                 max_acceleration: float,  # degree/s^2
+                 max_deceleration: float,  # degree/s^2
+                 pulley_diameter: float,  # mm
+                 ):
+        super().__init__(stroke, max_velocity, max_acceleration, max_deceleration)
+        self._pulley_diameter = pulley_diameter
+
+    def move(self,
+             target_position: float,  # degree
+             velocity: float | None = None,  # degree/s
+             acceleration: float | None = None,  # degree/s^2
+             deceleration: float | None = None,  # degree/s^2
+             simulation_only: bool = False,
+             ) -> np.ndarray:
+        return super().move(target_position, velocity, acceleration, deceleration, simulation_only)
+
+    def get_revolution(self,
+                       distance: float  # mm
+                       ) -> float:  # revolution
+        return distance / (self._pulley_diameter * np.pi)
+
+
 if __name__ == "__main__":
     # actuator = LinearActuator(stroke=600, max_velocity=120,
     #                           max_acceleration=UnitConverter.g_to_mm_s2(0.3),
@@ -156,7 +226,7 @@ if __name__ == "__main__":
     # actuator = LinearActuatorFactory.create_linear_actuator(stroke=600, time=3)
     actuator = LinearActuatorFactory.create_linear_actuator(
         stroke=600, time=4, max_velocity=120)
-    move_log = actuator.move(target_position=600, only_simulation=True,
+    move_log = actuator.move(target_position=600, simulation_only=True,
                              #  acceleration=UnitConverter.g_to_mm_s2(0.1),
                              #  deceleration=UnitConverter.g_to_mm_s2(0.2)
                              )
