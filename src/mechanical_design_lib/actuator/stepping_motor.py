@@ -28,6 +28,10 @@ class SteppingMotor:
 
     def get_rpm(self, pps: float) -> float:
         return (pps / (360 / self.step_angle)) * 60
+    
+    def get_pulse(self, revolute_angle: float) -> float:
+        return revolute_angle / self.step_angle
+
 
 
 if __name__ == '__main__':

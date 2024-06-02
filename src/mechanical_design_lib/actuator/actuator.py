@@ -192,25 +192,11 @@ class ScrewActuator(LinearActuator):
         return distance / self._pitch
 
 
-class RotaryActuatorWithPulley(RotaryActuator):
+class Pulley:
     def __init__(self,
-                 stroke: float,  # degree
-                 max_velocity: float,  # degree/s
-                 max_acceleration: float,  # degree/s^2
-                 max_deceleration: float,  # degree/s^2
                  pulley_diameter: float,  # mm
                  ):
-        super().__init__(stroke, max_velocity, max_acceleration, max_deceleration)
         self._pulley_diameter = pulley_diameter
-
-    def move(self,
-             target_position: float,  # degree
-             velocity: float | None = None,  # degree/s
-             acceleration: float | None = None,  # degree/s^2
-             deceleration: float | None = None,  # degree/s^2
-             simulation_only: bool = False,
-             ) -> np.ndarray:
-        return super().move(target_position, velocity, acceleration, deceleration, simulation_only)
 
     def get_revolution(self,
                        distance: float  # mm
