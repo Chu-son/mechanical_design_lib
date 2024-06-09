@@ -44,8 +44,12 @@ class StartingPulseRate:
         jl: UnitSymbol
 
         def display(self):
+            display(f"Symbols")
             display(self.fs.symbol)
+            display(self.jo.symbol)
+            display(self.jl.symbol)
 
+    @dataclasses.dataclass
     class Formula:
         f: sympy.Symbol
 
@@ -65,9 +69,9 @@ class StartingPulseRate:
             jl=UnitSymbol('jl', 'kg*m^2'),
         )
 
-    def _formula(self):
+    def _init_formula(self):
         s = self._symbols
-        f = s.fs / sympy.sqrt(1 + (s.jl / s.jo))
+        f = s.fs.symbol / sympy.sqrt(1 + (s.jl.symbol / s.jo.symbol))
 
         self._formula = self.Formula(
             f=f
@@ -80,11 +84,11 @@ class StartingPulseRate:
         sympy.pprint(self._formula)
 
     def calculate(self):
-        self._formula()
+        self._init_formula()
         return self._formula.f.subs({
-            self._symbols.fs: self._fs,
-            self._symbols.jo: self._jo,
-            self._symbols.jl: self._jl,
+            self._symbols.fs.symbol: self._fs,
+            self._symbols.jo.symbol: self._jo,
+            self._symbols.jl.symbol: self._jl,
         })
 
 if __name__ == '__main__':
