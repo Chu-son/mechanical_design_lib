@@ -1,8 +1,9 @@
 import dataclasses
 import sympy
-from IPython.display import display
+from IPython.display import display, Latex
 
 from mechanical_design_lib.utils.unit import UnitConverter, UnitSymbol
+from mechanical_design_lib.utils.util import get_latex_symbol_and_unit
 
 
 class SteppingMotor:
@@ -39,15 +40,15 @@ class SteppingMotor:
 class StartingPulseRate:
     @dataclasses.dataclass
     class Symbols:
-        fs: UnitSymbol
-        jo: UnitSymbol
-        jl: UnitSymbol
+        fs: UnitSymbol = UnitSymbol('f_s', 'Hz')
+        jo: UnitSymbol = UnitSymbol('J_o', 'kg*m^2')
+        jl: UnitSymbol = UnitSymbol('J_l', 'kg*m^2')
 
         def display(self):
-            display(f"Symbols")
-            display(self.fs.symbol)
-            display(self.jo.symbol)
-            display(self.jl.symbol)
+            display(Latex("----- Symbols -----"))
+            display(get_latex_symbol_and_unit("Starting pulse rate of the stepping motor", self.fs.symbol, self.fs.unit))
+            display(get_latex_symbol_and_unit("Inertia of the rotor", self.jo.symbol, self.jo.unit))
+            display(get_latex_symbol_and_unit("Inertia of the load", self.jl.symbol, self.jl.unit))
 
     @dataclasses.dataclass
     class Formula:
@@ -63,11 +64,7 @@ class StartingPulseRate:
         self._jo = jo
         self._jl = jl
 
-        self._symbols = self.Symbols(
-            fs=UnitSymbol('fs', 'Hz'),
-            jo=UnitSymbol('jo', 'kg*m^2'),
-            jl=UnitSymbol('jl', 'kg*m^2'),
-        )
+        self._symbols = self.Symbols()
 
     def _init_formula(self):
         s = self._symbols
