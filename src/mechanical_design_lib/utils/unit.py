@@ -55,10 +55,10 @@ class SIPrefixedValue:
 
 
 class UnitSymbol:
-    def __init__(self, name: str, unit: str):
-        self._symbol = sympy.Symbol(name)
-        self._unit = sympy.Symbol(unit)
-
+    def __init__(self, name: str | sympy.Symbol, unit: str | sympy.Symbol, value: float | None = None):
+        self._symbol = sympy.Symbol(name) if isinstance(name, str) else name
+        self._unit = sympy.Symbol(unit) if isinstance(unit, str) else unit
+        self._value = value
 
     @property
     def unit(self) -> sympy.Symbol:
@@ -67,3 +67,14 @@ class UnitSymbol:
     @property
     def symbol(self) -> sympy.Symbol:
         return self._symbol
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @value.setter
+    def value(self, value: float):
+        if self._value is not None:
+            print(f"Warning: {self._symbol} is already set to {
+                  self._value}. Overwriting with {value}.")
+        self._value = value
