@@ -7,7 +7,7 @@ def get_latex_symbol_and_unit(
         symbol: sympy.Symbol,
         unit: sympy.Symbol,
 ):
-    return Latex(f"{label}: $ \ {sympy.latex(symbol)} \ [{sympy.latex(unit)}]$")
+    return Latex(rf"{label}: $ \ {sympy.latex(symbol)} \ [{sympy.latex(unit)}]$")
 
 
 def display_latex_symbol_and_unit(
