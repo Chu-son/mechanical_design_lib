@@ -3,7 +3,7 @@ import sympy
 from IPython.display import display, Latex
 
 from mechanical_design_lib.utils.unit import UnitConverter, UnitSymbol
-from mechanical_design_lib.utils.util import get_latex_symbol_and_unit
+from mechanical_design_lib.utils.util import display_latex_symbol_and_unit
 
 
 class SteppingMotor:
@@ -46,16 +46,17 @@ class StartingPulseRate:
 
         def display(self):
             display(Latex("----- Symbols -----"))
-            display(get_latex_symbol_and_unit(
-                "Starting pulse rate of the stepping motor", self.fs.symbol, self.fs.unit))
-            display(get_latex_symbol_and_unit(
-                "Inertia of the rotor", self.jo.symbol, self.jo.unit))
-            display(get_latex_symbol_and_unit(
-                "Inertia of the load", self.jl.symbol, self.jl.unit))
+            display_latex_symbol_and_unit( "Starting pulse rate of the stepping motor", self.fs.symbol, self.fs.unit)
+            display_latex_symbol_and_unit( "Inertia of the rotor", self.jo.symbol, self.jo.unit)
+            display_latex_symbol_and_unit( "Inertia of the load", self.jl.symbol, self.jl.unit)
 
     @dataclasses.dataclass
     class Formula:
         f: UnitSymbol = UnitSymbol('f', 'Hz')
+
+        def display(self):
+            display(Latex("----- Formula -----"))
+            display_latex_symbol_and_unit( "Starting pulse rate of the stepping motor", self.f.symbol, self.f.unit)
 
     def __init__(self):
 
@@ -83,7 +84,7 @@ class StartingPulseRate:
         self._symbols.display()
 
     def display_formula(self):
-        sympy.pprint(self._formula)
+        self._formula.display()
 
     def calculate(self, symbols: Symbols):
         return self._formula.f.symbol.subs({
