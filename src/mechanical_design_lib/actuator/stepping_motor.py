@@ -8,7 +8,6 @@ from mechanical_design_lib.utils.util import get_latex_symbol_and_unit
 
 class SteppingMotor:
 
-
     def __init__(self,
                  phase: int,
                  microstep_resolution: int,  # 1: full step, 2: half step, 4: quarter step,,,
@@ -37,6 +36,7 @@ class SteppingMotor:
     def get_pulse(self, revolute_angle: float) -> float:
         return revolute_angle / self.step_angle
 
+
 class StartingPulseRate:
     @dataclasses.dataclass
     class Symbols:
@@ -46,33 +46,38 @@ class StartingPulseRate:
 
         def display(self):
             display(Latex("----- Symbols -----"))
-            display(get_latex_symbol_and_unit("Starting pulse rate of the stepping motor", self.fs.symbol, self.fs.unit))
-            display(get_latex_symbol_and_unit("Inertia of the rotor", self.jo.symbol, self.jo.unit))
-            display(get_latex_symbol_and_unit("Inertia of the load", self.jl.symbol, self.jl.unit))
+            display(get_latex_symbol_and_unit(
+                "Starting pulse rate of the stepping motor", self.fs.symbol, self.fs.unit))
+            display(get_latex_symbol_and_unit(
+                "Inertia of the rotor", self.jo.symbol, self.jo.unit))
+            display(get_latex_symbol_and_unit(
+                "Inertia of the load", self.jl.symbol, self.jl.unit))
 
     @dataclasses.dataclass
     class Formula:
-        f: sympy.Symbol
+        f: UnitSymbol = UnitSymbol('f', 'Hz')
 
-    def __init__(self,
-                    fs: float,  # Hz
-                    jo: float,  # kg*m^2
-                    jl: float,  # kg*m^2
-                    ):
-
-        self._fs = fs
-        self._jo = jo
-        self._jl = jl
+    def __init__(self):
 
         self._symbols = self.Symbols()
+        self._formula = self.Formula()
+
+        self._init_formula()
 
     def _init_formula(self):
         s = self._symbols
+
         f = s.fs.symbol / sympy.sqrt(1 + (s.jl.symbol / s.jo.symbol))
 
-        self._formula = self.Formula(
-            f=f
-        )
+        self._formula.f = UnitSymbol(f, 'Hz')
+
+    @property
+    def symbols(self):
+        return self._symbols
+
+    @property
+    def formula(self):
+        return self._formula
 
     def display_symbols(self):
         self._symbols.display()
@@ -80,13 +85,13 @@ class StartingPulseRate:
     def display_formula(self):
         sympy.pprint(self._formula)
 
-    def calculate(self):
-        self._init_formula()
-        return self._formula.f.subs({
-            self._symbols.fs.symbol: self._fs,
-            self._symbols.jo.symbol: self._jo,
-            self._symbols.jl.symbol: self._jl,
+    def calculate(self, symbols: Symbols):
+        return self._formula.f.symbol.subs({
+            self._symbols.fs.symbol: symbols.fs.value,
+            self._symbols.jo.symbol: symbols.jo.value,
+            self._symbols.jl.symbol: symbols.jl.value,
         })
+
 
 if __name__ == '__main__':
     motor = SteppingMotor(phase=2, microstep_resolution=1)
