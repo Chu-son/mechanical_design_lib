@@ -4,6 +4,7 @@ from IPython.display import display, Latex
 
 from mechanical_design_lib.utils.unit import UnitConverter, UnitSymbol
 from mechanical_design_lib.utils.util import display_latex_symbol_and_unit
+from mechanical_design_lib.base.base import FormulaBase
 
 
 class SteppingMotor:
@@ -37,57 +38,43 @@ class SteppingMotor:
         return revolute_angle / self.step_angle
 
 
-class StartingPulseRate:
+class StartingPulseRate(FormulaBase):
     @dataclasses.dataclass
-    class Symbols:
+    class Symbols(FormulaBase.Symbols):
         fs: UnitSymbol = UnitSymbol('f_s', 'Hz')
         jo: UnitSymbol = UnitSymbol('J_o', 'kg*m^2')
         jl: UnitSymbol = UnitSymbol('J_l', 'kg*m^2')
 
         def display(self):
             display(Latex("----- Symbols -----"))
-            display_latex_symbol_and_unit( "Starting pulse rate of the stepping motor", self.fs.symbol, self.fs.unit)
-            display_latex_symbol_and_unit( "Inertia of the rotor", self.jo.symbol, self.jo.unit)
-            display_latex_symbol_and_unit( "Inertia of the load", self.jl.symbol, self.jl.unit)
+            display_latex_symbol_and_unit(
+                "Starting pulse rate of the stepping motor", self.fs.symbol, self.fs.unit)
+            display_latex_symbol_and_unit(
+                "Inertia of the rotor", self.jo.symbol, self.jo.unit)
+            display_latex_symbol_and_unit(
+                "Inertia of the load", self.jl.symbol, self.jl.unit)
 
     @dataclasses.dataclass
-    class Formula:
+    class Formulas(FormulaBase.Formulas):
         f: UnitSymbol = UnitSymbol('f', 'Hz')
 
         def display(self):
             display(Latex("----- Formula -----"))
-            display_latex_symbol_and_unit( "Starting pulse rate of the stepping motor", self.f.symbol, self.f.unit)
+            display_latex_symbol_and_unit(
+                "Starting pulse rate of the stepping motor", self.f.symbol, self.f.unit)
 
     def __init__(self):
-
-        self._symbols = self.Symbols()
-        self._formula = self.Formula()
-
-        self._init_formula()
+        super().__init__()
 
     def _init_formula(self):
         s = self._symbols
 
         f = s.fs.symbol / sympy.sqrt(1 + (s.jl.symbol / s.jo.symbol))
 
-        self._formula.f = UnitSymbol(f, 'Hz')
-
-    @property
-    def symbols(self):
-        return self._symbols
-
-    @property
-    def formula(self):
-        return self._formula
-
-    def display_symbols(self):
-        self._symbols.display()
-
-    def display_formula(self):
-        self._formula.display()
+        self._formulas.f = UnitSymbol(f, 'Hz')
 
     def calculate(self, symbols: Symbols):
-        return self._formula.f.symbol.subs({
+        return self._formulas.f.symbol.subs({
             self._symbols.fs.symbol: symbols.fs.value,
             self._symbols.jo.symbol: symbols.jo.value,
             self._symbols.jl.symbol: symbols.jl.value,
