@@ -192,44 +192,6 @@ class ScrewActuator(LinearActuator):
         return distance / self._pitch
 
 
-class RotaryPowerTransmissionComponentBase:
-    def __init__(self,
-                 pitch_diameter: float,  # mm
-                 ):
-        self._pitch_diameter = pitch_diameter
-
-    def get_revolution(self,
-                       distance: float  # mm
-                       ) -> float:  # revolution
-        return distance / (self._pitch_diameter * np.pi)
-
-    def get_angle(self,
-                  distance: float  # mm
-                  ) -> float:  # degree
-        return self.get_revolution(distance) * 360
-
-
-class Pulley(RotaryPowerTransmissionComponentBase):
-    def __init__(self,
-                 pulley_diameter: float,  # mm
-                 ):
-        super().__init__(pitch_diameter=pulley_diameter)
-
-
-class SpurGear(RotaryPowerTransmissionComponentBase):
-    def __init__(self,
-                 module: float,  # mm
-                 number_of_teeth: int,  # -
-                 width: float,  # mm
-                 ):
-        self._module = module
-        self._number_of_teeth = number_of_teeth
-        self._width = width
-
-        pitch_diameter = module * number_of_teeth
-        super().__init__(pitch_diameter=pitch_diameter)
-
-
 if __name__ == "__main__":
     # actuator = LinearActuator(stroke=600, max_velocity=120,
     #                           max_acceleration=UnitConverter.g_to_mm_s2(0.3),

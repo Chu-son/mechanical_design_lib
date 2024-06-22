@@ -3,8 +3,11 @@ import sympy
 from IPython.display import display, Latex
 
 from mechanical_design_lib.utils.unit import UnitConverter, UnitSymbol
+from mechanical_design_lib.utils.unit import Angle, Distance
+
 from mechanical_design_lib.utils.util import display_latex_symbol_and_unit
 from mechanical_design_lib.base.base import FormulaBase
+from mechanical_design_lib.power_transmission_component import rotary_power_transmission_component as rptc
 
 
 class SteppingMotor:
@@ -36,6 +39,54 @@ class SteppingMotor:
 
     def get_pulse(self, revolute_angle: float) -> float:
         return revolute_angle / self.step_angle
+
+    def get_angle(self, pulse: float) -> float:
+        return pulse * self.step_angle
+
+
+class SteppingMotorActuatorUnit:
+    def __init__(self,
+                 transmission_component_unit_list: list[rptc.RotaryPowerTransmissionComponentUnitBase],
+                 output_component: rptc.OutputComponentBase,
+                 stepping_motor: SteppingMotor,
+                 ):
+
+        self._transmission_component_unit_list = transmission_component_unit_list
+        self._output_component = output_component
+        self._stepping_motor = stepping_motor
+
+        self._reduction_ratio = self._culculate_reduction_ratio()
+
+    @property
+    def reduction_ratio(self) -> float:
+        return self._reduction_ratio
+
+    def _culculate_reduction_ratio(self) -> float:
+        reduction_ratio = 1
+        for component in self._transmission_component_unit_list:
+            reduction_ratio *= component.reduction_ratio
+        return reduction_ratio
+
+    def get_pulse(self,
+                  distance: Distance | Angle  # mm or degree
+                  ) -> float:
+        return self._stepping_motor.get_pulse(
+            self._output_component.get_angle(distance) * self.reduction_ratio
+        )
+
+    def get_pps(self,
+                speed: float  # mm/s or degree/s
+                ) -> float:
+        return self._stepping_motor.get_pps(
+            self._output_component.get_rpm(speed) * self.reduction_ratio
+        )
+
+    def get_distance(self,
+                     pulse: float  # -
+                     ) -> Distance | Angle:
+        return self._output_component.get_distance(
+            self._stepping_motor.get_angle(pulse) / self.reduction_ratio
+        )
 
 
 class StartingPulseRate(FormulaBase):
