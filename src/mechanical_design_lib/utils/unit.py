@@ -1,7 +1,20 @@
 import enum
 import sympy
+from typing import NewType
 
 from mechanical_design_lib.utils.constant import GRAVITY as G
+
+
+Angle = NewType("Angle", float)
+Distance = NewType("Distance", float)
+Pulse = NewType("Pulse", float)
+PPS = NewType("PPS", float)
+
+
+class UnitType(enum.IntEnum):
+    ANGLE = enum.auto()
+    DISTANCE = enum.auto()
+    PULSE = enum.auto()
 
 
 class UnitConverter:
