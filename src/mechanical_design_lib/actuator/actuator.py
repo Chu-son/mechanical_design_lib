@@ -18,13 +18,74 @@ class BaseActuator:
 
         self._position: int = 0  # unit depends on subclass
 
-    def move(self,
-             target_position: int,  # unit depends on subclass
-             velocity: int | None = None,  # unit depends on subclass
-             acceleration: float | None = None,  # unit depends on subclass
-             deceleration: float | None = None,  # unit depends on subclass
-             simulation_only: bool = False,
-             ) -> np.ndarray:
+    def move_absolute(self,
+                      target_position: int,  # unit depends on subclass
+                      time: float | None = None,  # s
+                      velocity: int | None = None,  # unit depends on subclass
+                      acceleration: float | None = None,  # unit depends on subclass
+                      deceleration: float | None = None,  # unit depends on subclass
+                      ) -> float:
+        # validate
+        self._validate_move(target_position, time, velocity,
+                            acceleration, deceleration)
+
+        self._position = target_position
+
+        if time is not None:
+            return time
+        else:
+            distance = target_position - self._position
+            return self._calculate_move_time(distance, velocity, acceleration, deceleration)
+
+    def move_relative(self,
+                      distance: int,  # unit depends on subclass
+                      time: float | None = None,  # s
+                      velocity: int | None = None,  # unit depends on subclass
+                      acceleration: float | None = None,  # unit depends on subclass
+                      deceleration: float | None = None,  # unit depends on subclass
+                      ) -> float:
+        # validate
+        self._validate_move(self._position + distance, time, velocity,
+                            acceleration, deceleration)
+
+        self._position += distance
+
+        if time is not None:
+            return time
+        else:
+            return self._calculate_move_time(distance, velocity, acceleration, deceleration)
+
+    def _calculate_move_time(self,
+                             distance: int,  # unit depends on subclass
+                             velocity: int | None = None,  # unit depends on subclass
+                             acceleration: float | None = None,  # unit depends on subclass
+                             deceleration: float | None = None,  # unit depends on subclass
+                             ) -> float:
+        velocity = velocity or self._max_velocity
+        acceleration = acceleration or self._max_acceleration
+        deceleration = deceleration or self._max_deceleration
+
+        return distance / velocity
+
+    def _validate_move(self,
+                       target_position: int,  # unit depends on subclass
+                       time: float | None = None,  # s
+                       velocity: int | None = None,  # unit depends on subclass
+                       acceleration: float | None = None,  # unit depends on subclass
+                       deceleration: float | None = None,  # unit depends on subclass
+                       ) -> None:
+        if target_position > self._stroke:
+            raise ValueError("Target position is out of stroke range.")
+        if target_position < 0:
+            raise ValueError("Target position is out of stroke range.")
+
+    def move_detail(self,
+                    target_position: int,  # unit depends on subclass
+                    velocity: int | None = None,  # unit depends on subclass
+                    acceleration: float | None = None,  # unit depends on subclass
+                    deceleration: float | None = None,  # unit depends on subclass
+                    simulation_only: bool = False,
+                    ) -> np.ndarray:
 
         if target_position > self._stroke:
             raise ValueError("Target position is out of stroke range.")
