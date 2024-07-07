@@ -1,5 +1,5 @@
-import uuid
-from graphviz import Digraph
+import mechanical_design_lib.utils.flowchart as flowchart
+from mechanical_design_lib.actuator.actuator import BaseActuator
 
 
 class Machine:
@@ -13,13 +13,13 @@ class Machine:
 class MachineUnit:
     def __init__(self, name: str):
         self._name = name
-        self.behaviors = []
+        self.behaviors = {}
 
     def add_behavior(self, behavior):
-        self.behaviors.append(behavior)
+        self.behaviors[behavior.name] = behavior
 
 
-class Behavior:
+class MachineUnitBehavior:
     def __init__(self, name: str):
         self._name = name
         self.behavior_summaries = []
@@ -27,129 +27,83 @@ class Behavior:
     def add_behavior_summary(self, behavior_summary):
         self.behavior_summaries.append(behavior_summary)
 
-    def add_behavior_summary_chain(self, behavior_summary):
-        self.behavior_summaries.append(behavior_summary)
-        return self
+    @property
+    def name(self):
+        return self._name
 
 
-class BehaviorDetail:
-    def __init__(self, detail: str):
-        self._detail = detail
-        self._id = uuid.uuid4()  # ユニークなIDを生成
-
-
-class IF(BehaviorDetail):
-    def __init__(self, condition: str):
-        super().__init__(condition)
-        self._true_branch = []
-        self._false_branch = []
-
-    def add_true_branch(self, detail):
-        self._true_branch.append(detail)
-
-    def add_false_branch(self, detail):
-        self._false_branch.append(detail)
-
-
-class LOOP(BehaviorDetail):
-    def __init__(self, condition: str):
-        super().__init__(condition)
-        self._loop_body = []
-
-    def add_to_loop(self, detail):
-        self._loop_body.append(detail)
-
-
-class JUMP(BehaviorDetail):
-    def __init__(self, target: BehaviorDetail):
-        super().__init__(f"Jump to {target._detail}")
-        self._target = target
-
-
-class PARALLEL(BehaviorDetail):
-    def __init__(self):
-        super().__init__("Parallel Processes")
-        self.parallel_branches = []
-
-    def add_parallel_branch(self, branch):
-        self.parallel_branches.append(branch)
-
-
-class BehaviorSummary:
-    def __init__(self, description: str):
+class BehaviorSummary(flowchart.Subroutine):
+    def __init__(self, description: str,
+                 root_element: flowchart.FlowchartElement = None,
+                 is_parse_subroutine: bool = False
+                 ):
+        super().__init__(description,
+                         subroutine_root_element=root_element,
+                         is_parse_subroutine=is_parse_subroutine
+                         )
         self._description = description
-        self.behavior_details = []
-        self.detail_relations = []
 
-    def add_behavior_detail(self, behavior_detail):
-        if not self.behavior_details:
-            self.behavior_details.append(behavior_detail)
-        else:
-            last_detail = self.behavior_details[-1]
-            self.detail_relations.append((last_detail, behavior_detail, ""))
-            self.behavior_details.append(behavior_detail)
 
-    def add_detail_relation(self, start_detail, end_detail, label=""):
-        self.detail_relations.append((start_detail, end_detail, label))
+class BehaviorDetailAction(flowchart.Action):
+    # def __init__(self, action: str, actuator: BaseActuator = None):
+    #     super().__init__(action)
+    #     self._actuator = actuator
 
-    def draw_flowchart(self, filename='flowchart'):
-        dot = Digraph(comment='Behavior Detail Flowchart')
-
-        for detail in self.behavior_details:
-            dot.node(str(detail._id), detail._detail)
-
-        for start, end, label in self.detail_relations:
-            dot.edge(str(start._id), str(end._id), label=label)
-
-        dot.render(filename, view=True, format='png')
+    def __init__(self, action: str, action_time: float = None):
+        super().__init__(action)
+        self._action_time = action_time
 
 
 if __name__ == "__main__":
-    behavior_summary = BehaviorSummary("Complex Example Summary")
 
-    # 開始
-    start = BehaviorDetail("Start")
-    behavior_summary.add_behavior_detail(start)
+    # フローチャートの作成例
+    root = flowchart.Root("Start")
 
-    # 並列処理
-    parallel_process = PARALLEL()
-    parallel_1 = BehaviorDetail("Parallel 1")
-    parallel_2 = BehaviorDetail("Parallel 2")
-    parallel_process.add_parallel_branch(parallel_1)
-    parallel_process.add_parallel_branch(parallel_2)
-    behavior_summary.add_behavior_detail(parallel_process)
-    behavior_summary.add_detail_relation(start, parallel_process)
-    behavior_summary.add_detail_relation(parallel_process, parallel_1, "Parallel")
-    behavior_summary.add_detail_relation(parallel_process, parallel_2, "Parallel")
+    after_root_connector = flowchart.Connector("").add_from(root)
+    input1 = flowchart.Input("User Input").add_next(after_root_connector)
 
-    # 並列処理終了後
-    after_parallel = BehaviorDetail("After Parallel")
-    behavior_summary.add_behavior_detail(after_parallel)
-    behavior_summary.add_detail_relation(parallel_1, after_parallel)
-    behavior_summary.add_detail_relation(parallel_2, after_parallel)
+    action1 = BehaviorDetailAction("Action 1").add_from(after_root_connector)
+    action2 = BehaviorDetailAction("Action 2").add_from(action1)
+    action3 = BehaviorDetailAction("Action 3").add_from(action2)
+    action4 = BehaviorDetailAction("Action 4").add_from(action3)
 
-    # 条件分岐
-    condition = IF("Condition: x > 5")
-    behavior_summary.add_behavior_detail(condition)
-    behavior_summary.add_detail_relation(after_parallel, condition)
+    action5 = BehaviorDetailAction("Action 5").add_from(action4)
+    action6 = BehaviorDetailAction("Action 6").add_from(action4)
 
-    # 真の場合のループ処理
-    loop = LOOP("While x < 10")
-    loop_detail = BehaviorDetail("Increment x")
-    loop.add_to_loop(loop_detail)
-    condition.add_true_branch(loop)
-    behavior_summary.add_behavior_detail(loop_detail)
-    behavior_summary.add_detail_relation(condition, loop, "True")
-    behavior_summary.add_detail_relation(loop, loop_detail)
+    action7 = BehaviorDetailAction("Action 7").add_from(action4)
+    action8 = BehaviorDetailAction("Action 8").add_from(action7)
 
-    # 偽の場合のジャンプ処理
-    end = BehaviorDetail("End")
-    jump_to_end = JUMP(end)
-    condition.add_false_branch(jump_to_end)
-    behavior_summary.add_behavior_detail(end)
-    behavior_summary.add_detail_relation(condition, end, "False")
+    action9 = BehaviorDetailAction("Action 8")\
+        .add_from(action5)\
+        .add_from(action6)\
+        .add_from(action8)\
 
-    # 終了
-    behavior_summary.add_detail_relation(loop_detail, end)
+    action10 = BehaviorDetailAction("Action 10").add_from(action9)
 
-    behavior_summary.draw_flowchart('complex_example_flowchart')
+    loop_start = flowchart.LoopStart("Loop Start").add_from(action10)
+
+    action11 = BehaviorDetailAction("Action 11").add_from(loop_start)
+    action12 = BehaviorDetailAction("Action 12").add_from(action11)
+    action13 = BehaviorDetailAction("Action 13").add_from(action12)
+
+    loop_end = flowchart.LoopEnd("Loop End").add_from(action13)
+
+    action14 = BehaviorDetailAction("Action 14").add_from(loop_end)
+
+    decision = flowchart.Decision("Is Condition True?").add_from(action14)
+    action15 = BehaviorDetailAction("Action 15")
+    action16 = BehaviorDetailAction("Action 16")
+
+    decision.add_yes(action15)
+    decision.add_no(action16)
+
+    end = flowchart.Root("End").add_from(action15).add_from(action16)
+
+    behavior_summary = BehaviorSummary(
+        "Complex Example Summary",
+        root_element=root,
+        is_parse_subroutine=True
+    )
+
+    fc = flowchart.Flowchart(behavior_summary)
+    fc.draw(filename="complex_example_summary")
