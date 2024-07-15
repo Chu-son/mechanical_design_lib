@@ -40,6 +40,39 @@ class FlowchartElement:
     def get_backlinks(self):
         return self._elements_backlinks
 
+    def drop_nextlink(self, element):
+        self._next_elements = [(next_element, label) for next_element,
+                               label in self._next_elements if next_element != element]
+
+    def replace_nextlink(self, element, new_element):
+        for i, (next_element, label) in enumerate(self._next_elements):
+            if next_element == element:
+                self._next_elements[i] = (new_element, label)
+                new_element.add_backlink(self)
+                element.drop_backlink(self)
+                return
+
+    def drop_backlink(self, element):
+        self._elements_backlinks = [
+            backlink for backlink in self._elements_backlinks if backlink != element]
+
+    def replace_backlink(self, element, new_element):
+        for i, backlink in enumerate(self._elements_backlinks):
+            if backlink == element:
+                self._elements_backlinks[i] = new_element
+                new_element.add_next(self)
+                element.drop_nextlink(self)
+                return
+
+    def post_process(self):
+        pass
+
+    def copy_to(self, element):
+        element._next_elements = self._next_elements
+        element._elements_backlinks = self._elements_backlinks
+
+        return element
+
 
 class Action(FlowchartElement):
     def add_to_graph(self, graph):
@@ -64,46 +97,7 @@ class Subroutine(FlowchartElement):
         self._is_parse_subroutine = is_parse_subroutine
 
     def add_to_graph(self, graph):
-        if self.is_parse_subroutine and self.subroutine_root_element:
-            self.subroutine_root_element.add_to_graph(graph)
-        else:
-            graph.graph.node(self.id, f" | {self.label} | ", shape='record')
-
-    def get_nextlinks(self):
-        if self.is_parse_subroutine and self.subroutine_root_element:
-            return self.subroutine_root_element.next_elements
-        else:
-            return self._next_elements
-
-    def get_backlinks(self):
-        if self.is_parse_subroutine and self.subroutine_root_element:
-            return self.subroutine_root_element.get_backlinks()
-        else:
-            return self._elements_backlinks
-
-    def add_next(self, element, label=''):
-        if self.is_parse_subroutine and self.subroutine_root_element:
-            get_last_element(
-                self.subroutine_root_element).add_next(element, label)
-            print(get_last_element(self._subroutine_root_element).label)
-            print(element.label)
-            return self
-        else:
-            super().add_next(element, label)
-
-    def add_from(self, element, label=''):
-        if self.is_parse_subroutine and self.subroutine_root_element:
-            self.subroutine_root_element.add_from(element, label)
-            return self
-        else:
-            super().add_from(element, label)
-
-    def add_backlink(self, element):
-        if self.is_parse_subroutine and self.subroutine_root_element:
-            get_last_element(
-                self.subroutine_root_element).add_backlink(element)
-        else:
-            super().add_backlink(element)
+        graph.graph.node(self.id, f" | {self.label} | ", shape='record')
 
     @property
     def subroutine_root_element(self):
@@ -112,6 +106,29 @@ class Subroutine(FlowchartElement):
     @property
     def is_parse_subroutine(self):
         return self._is_parse_subroutine
+
+    def post_process(self):
+        if self.is_parse_subroutine:
+            first_element = self._subroutine_root_element
+            new_first_element = self._subroutine_root_element.copy_to(
+                Connector(''))
+            for next_element, label in first_element.get_nextlinks():
+                next_element.replace_backlink(first_element, new_first_element)
+
+            last_element = get_last_element(new_first_element)
+            new_last_element = last_element.copy_to(Connector(''))
+            for backlink in last_element.get_backlinks():
+                backlink.replace_nextlink(last_element, new_last_element)
+
+            for next_element, label in self.get_nextlinks():
+                new_last_element.add_next(next_element, label)
+                next_element.drop_backlink(self)
+
+            for backlink in self.get_backlinks():
+                backlink.add_next(new_first_element)
+                backlink.drop_nextlink(self)
+
+            self._subroutine_root_element = new_first_element
 
 
 class Input(FlowchartElement):
@@ -166,6 +183,30 @@ class Flowchart:
         self.graph = Digraph(format='png')
         self.visited_nodes = set()
         self.visited_edges = set()
+
+    def post_process(self):
+        for element in self._get_elements():
+            element.post_process()
+
+    def _get_elements(self):
+        queue = [self.root_element]
+        visited = set()
+
+        while queue:
+            current_element = queue.pop(0)
+            visited.add(current_element)
+
+            yield current_element
+
+            next_elements = current_element.get_nextlinks()
+            for next_element, _ in next_elements:
+                if next_element not in visited:
+                    queue.append(next_element)
+
+            backlinks = current_element.get_backlinks()
+            for backlink in backlinks:
+                if backlink not in visited:
+                    queue.append(backlink)
 
     def draw(self, filename='flowchart'):
         if not self.root_element:

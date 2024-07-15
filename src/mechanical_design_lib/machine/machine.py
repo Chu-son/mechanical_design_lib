@@ -98,12 +98,16 @@ if __name__ == "__main__":
     decision.add_no(action16)
 
     end = flowchart.Root("End").add_from(action15).add_from(action16)
-
+    
+    behavior_start = flowchart.Root("Behavior Root")
     behavior_summary = BehaviorSummary(
         "Complex Example Summary",
         root_element=root,
         is_parse_subroutine=True
-    )
+    ).add_from(behavior_start)
 
-    fc = flowchart.Flowchart(behavior_summary)
+    behavior_end = flowchart.Root("Behavior End").add_from(behavior_summary)
+
+    fc = flowchart.Flowchart(behavior_start)
+    fc.post_process()
     fc.draw(filename="complex_example_summary")
