@@ -34,12 +34,10 @@ class FlowchartElement:
     def id(self):
         return self._id
 
-    @property
-    def next_elements(self):
+    def get_nextlinks(self):
         return self._next_elements
 
-    @property
-    def elements_backlinks(self):
+    def get_backlinks(self):
         return self._elements_backlinks
 
 
@@ -71,17 +69,15 @@ class Subroutine(FlowchartElement):
         else:
             graph.graph.node(self.id, f" | {self.label} | ", shape='record')
 
-    @property
-    def next_elements(self):
+    def get_nextlinks(self):
         if self.is_parse_subroutine and self.subroutine_root_element:
             return self.subroutine_root_element.next_elements
         else:
             return self._next_elements
 
-    @property
-    def elements_backlinks(self):
+    def get_backlinks(self):
         if self.is_parse_subroutine and self.subroutine_root_element:
-            return self.subroutine_root_element.elements_backlinks
+            return self.subroutine_root_element.get_backlinks()
         else:
             return self._elements_backlinks
 
@@ -152,7 +148,7 @@ def get_last_element(element):
         current_element = queue.pop(0)
         visited.add(current_element)
 
-        next_elements = current_element.next_elements
+        next_elements = current_element.get_nextlinks()
         if not next_elements:
             return current_element
 
@@ -185,10 +181,10 @@ class Flowchart:
         element.add_to_graph(self)
         self.visited_nodes.add(element.id)
 
-        for next_element, label in element.next_elements:
+        for next_element, label in element.get_nextlinks():
             self._add_edges_to_graph(element, next_element, label)
 
-        for backlink in element.elements_backlinks:
+        for backlink in element.get_backlinks():
             self._add_elements_to_graph(backlink)
 
     def _add_edges_to_graph(self, element, next_element, label):
