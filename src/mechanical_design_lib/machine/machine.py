@@ -109,5 +109,4 @@ if __name__ == "__main__":
     behavior_end = flowchart.Root("Behavior End").add_from(behavior_summary)
 
     fc = flowchart.Flowchart(behavior_start)
-    fc.post_process()
-    fc.draw(filename="complex_example_summary")
+    fc.draw(filename="machine_behavior_example")

@@ -184,7 +184,7 @@ class Flowchart:
         self.visited_nodes = set()
         self.visited_edges = set()
 
-    def post_process(self):
+    def _post_process(self):
         for element in self._get_elements():
             element.post_process()
 
@@ -211,6 +211,7 @@ class Flowchart:
     def draw(self, filename='flowchart'):
         if not self.root_element:
             raise ValueError('Root element is not set.')
+        self._post_process()
 
         self._add_elements_to_graph(self.root_element)
         self.graph.render(filename, view=True)
@@ -242,11 +243,14 @@ class Flowchart:
 if __name__ == '__main__':
     # フローチャートの作成例
 
-    # 要素の追加
-    sub_root = Action('Subroutine Action 1')
-    sub_action2 = Action('Subroutine Action 2').add_from(sub_root)
+    # サブルーチン
+    sub_root = Root('Subroutine Start')
+    sub_action = Action('Subroutine Action 1').add_from(sub_root)
+    sub_action2 = Action('Subroutine Action 2').add_from(sub_action)
+    sub_end = Root('Subroutine End').add_from(sub_action2)
 
-    # 要素の追加
+
+    # メインのフローチャート
     root = Root('Start')
 
     after_root_connector = Connector('').add_from(root)
@@ -271,6 +275,6 @@ if __name__ == '__main__':
     end.add_from(subroutine)
     end.add_from(loop_end)
 
-    # フローチャートの描画
+    # フローチャート描画
     flowchart = Flowchart(root)
-    flowchart.draw('example_flowchart_with_subroutine_and_input')
+    flowchart.draw('example_flowchart')
