@@ -176,20 +176,14 @@ def get_last_element(element):
     return None
 
 
-class Flowchart:
-    def __init__(self, root_element):
-        self.root_element = root_element
+class ElementIterator:
+    def __init__(self,
+                 root_element: FlowchartElement,
+                 ) -> None:
+        self._root_element = root_element
 
-        self.graph = Digraph(format='png')
-        self.visited_nodes = set()
-        self.visited_edges = set()
-
-    def _post_process(self):
-        for element in self._get_elements():
-            element.post_process()
-
-    def _get_elements(self):
-        queue = [self.root_element]
+    def __iter__(self):
+        queue = [self._root_element]
         visited = set()
 
         while queue:
@@ -207,6 +201,20 @@ class Flowchart:
             for backlink in backlinks:
                 if backlink not in visited:
                     queue.append(backlink)
+
+
+class Flowchart:
+    def __init__(self, root_element):
+        self.root_element = root_element
+
+        self.graph = Digraph(format='png')
+        self.visited_nodes = set()
+        self.visited_edges = set()
+
+    def _post_process(self):
+        # for element in self._get_elements():
+        for element in ElementIterator(self.root_element):
+            element.post_process()
 
     def draw(self, filename='flowchart'):
         if not self.root_element:
@@ -248,7 +256,6 @@ if __name__ == '__main__':
     sub_action = Action('Subroutine Action 1').add_from(sub_root)
     sub_action2 = Action('Subroutine Action 2').add_from(sub_action)
     sub_end = Root('Subroutine End').add_from(sub_action2)
-
 
     # メインのフローチャート
     root = Root('Start')
