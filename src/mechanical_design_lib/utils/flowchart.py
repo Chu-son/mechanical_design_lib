@@ -66,7 +66,7 @@ class FlowchartElement:
                 element.drop_nextlink(self)
                 return
 
-    def post_process(self):
+    def compile(self):
         pass
 
     def copy_to(self, element):
@@ -107,7 +107,7 @@ class Decision(FlowchartElement):
         self._no_next_element = element
         return self
 
-    def post_process(self):
+    def compile(self):
         if self._yes_root_element is None \
                 or self._no_root_element is None:
             raise ValueError('Decision element is not properly set.')
@@ -155,7 +155,7 @@ class Subroutine(FlowchartElement):
     def is_parse_subroutine(self):
         return self._is_parse_subroutine
 
-    def post_process(self):
+    def compile(self):
         if self.is_parse_subroutine:
             first_element = self._subroutine_root_element
             new_first_element = self._subroutine_root_element.copy_to(
@@ -196,7 +196,7 @@ class Loop(FlowchartElement):
     def label(self):
         return f"{self._label}\n (n= {self._loop_count})"
 
-    def post_process(self):
+    def compile(self):
         self._loop_start.add_next(self._loop_content)
         last_elem = get_last_element(self._loop_content)
         last_elem.add_next(self._loop_end)
@@ -224,7 +224,7 @@ class Parallel(FlowchartElement):
         self._parallel_elements.append(root_element)
         return self
 
-    def post_process(self):
+    def compile(self):
         for element in self._parallel_elements:
             self._parallel_start_connector.add_next(element)
             last_elem = get_last_element(element)
@@ -324,7 +324,7 @@ class ElementsCompiler:
         # root_element から走査して、新しい FlowchartElement を作成する
         new_root_element = copy.deepcopy(root_element)
         for element in ElementIterator(new_root_element):
-            element.post_process()
+            element.compile()
 
         return new_root_element
 
@@ -337,18 +337,18 @@ class Flowchart:
         self.visited_nodes = set()
         self.visited_edges = set()
 
-    def _post_process(self):
+    def _compile(self):
         # for element in self._get_elements():
         print("Post processing")
         # for element in ElementIterator(self.root_element):
-        #     element.post_process()
+        #     element.compile()
         self.root_element = ElementsCompiler.compile(self.root_element)
         print("Post processing done")
 
     def draw(self, filename='flowchart', view=True):
         if not self.root_element:
             raise ValueError('Root element is not set.')
-        self._post_process()
+        self._compile()
 
         self._add_elements_to_graph(self.root_element)
         self.graph.render(filename,
