@@ -1,6 +1,11 @@
 import mechanical_design_lib.utils.flowchart as flowchart
 from mechanical_design_lib.actuator.actuator import BaseActuator
 
+from mechanical_design_lib.utils.util import DirectoryFactory
+from mechanical_design_lib.utils.logger import LoggerFactory
+
+logger = LoggerFactory.get_logger(__name__)
+
 
 class BehaviorSummary(flowchart.Subroutine):
     def __init__(self, description: str,
@@ -56,9 +61,9 @@ class BehaviorDetailAction(flowchart.Action):
 
     def get_takt_time(self) -> float:
         if self._takt_time is None:
-            print(f"Warning: Takt time is not set for {self.label}")
+            logger.warn(f"Warning: Takt time is not set for {self.label}")
 
-        print(f"Action: {self._label}, takt time: {self._takt_time}")
+        logger.info(f"Action: {self._label}, takt time: {self._takt_time}")
         return self._takt_time
 
 
@@ -82,7 +87,7 @@ class BehaviorParallel(flowchart.Parallel):
 
             takt_time = max(takt_time, element_takt_time)
 
-        print(f"Parallel: {self.label}, max takt time: {takt_time}")
+        logger.info(f"Parallel: {self.label}, max takt time: {takt_time}")
         return takt_time
 
 
@@ -103,8 +108,8 @@ class BehaviorLoop(flowchart.Loop):
                 takt_time += tt
 
         takt = takt_time * self._loop_count
-        print(f"Loop: {self.label}, takt time: {
-              takt_time} x {self._loop_count} = {takt}")
+        logger.info(f"Loop: {self.label}, takt time: {
+            takt_time} x {self._loop_count} = {takt}")
         return takt
 
 
@@ -133,8 +138,8 @@ class BehaviorDecision(flowchart.Decision):
                         continue
                     takt_time += tt
 
-        print(f"Decision: {self.label}, Value: {
-              "Yes" if self._default_yes else "No"}, takt time: {takt_time}")
+        logger.info(f"Decision: {self.label}, Value: {
+            "Yes" if self._default_yes else "No"}, takt time: {takt_time}")
         return takt_time
 
 
@@ -169,7 +174,6 @@ class Machine:
 
 
 if __name__ == "__main__":
-
     # フローチャートの作成
     root = flowchart.Root("Start")
 
@@ -260,4 +264,4 @@ if __name__ == "__main__":
             view=False,
             )
 
-    print(f"takt time: {behavior_summary.get_takt_time()}")
+    logger.info(f"takt time: {behavior_summary.get_takt_time()}")
